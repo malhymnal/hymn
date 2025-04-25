@@ -21,51 +21,41 @@
   <div class="container" id="songDetails">Loading...</div>
 
   <script>
-    const baseUrl = "https://script.google.com/macros/s/AKfycbzjYbduGbrxWh91rmUsACN4kIH3g7ktowkZHkwNWvhaUjwxopU-ZLHLfKg1QDr_Xz4H/exec";
     const urlParams = new URLSearchParams(window.location.search);
     const songId = urlParams.get("id");
     let lyricsLang = localStorage.getItem("lyricsLang") || "mal";
 
     function loadSong() {
-      fetch(`${baseUrl}?id=${songId}`)
-        .then(res => res.json())
-        .then(song => {
-          if (!song || !song.No) {
-            document.getElementById("songDetails").innerHTML = "<p style='color:red;'>Song not found.</p>";
-            return;
-          }
+      const allSongs = JSON.parse(localStorage.getItem("offlineSongs") || "[]");
+      const song = allSongs.find(s => String(s.No) === songId);
 
-          const lyrics = lyricsLang === "man" ? song.Manglish || "" : song.Song || "";
-          const nextId = parseInt(song.No) + 1;
+      if (!song) {
+        document.getElementById("songDetails").innerHTML = "<p style='color:red;'>Song not found offline.</p>";
+        return;
+      }
 
-          const authorLink = song["Author English"]
-            ? `<a class="author" href="index.html?author=${encodeURIComponent(song["Author English"])}">${song["Author English"]}</a>`
-            : `<div class="author" style="height: 1.5em;">&nbsp;</div>`;
+      const lyrics = lyricsLang === "man" ? song.Manglish || "" : song.Song || "";
+      const nextId = parseInt(song.No) + 1;
+      const authorLink = song["Author English"]
+        ? `<a class="author" href="index.html?author=${encodeURIComponent(song["Author English"])}">${song["Author English"]}</a>`
+        : `<div class="author" style="height: 1.5em;">&nbsp;</div>`;
 
-          document.getElementById("songDetails").innerHTML = `
-            <h2>${song.No}. ${song.Name || ""}</h2>
-            ${authorLink}
-            <div class="lyrics">${lyrics}</div>
-            ${song.Youtube ? `<iframe src="${song.Youtube.replace("watch?v=", "embed/")}" frameborder="0" allowfullscreen></iframe>` : ""}
-            <a class="next" href="song.html?id=${nextId}">→ Next Song</a>
-          `;
-        })
-        .catch(err => {
-          document.getElementById("songDetails").innerHTML = "<p style='color:red;'>Failed to load song.</p>";
-          console.error(err);
-        });
+      document.getElementById("songDetails").innerHTML = `
+        <h2>${song.No}. ${song.Name || ""}</h2>
+        ${authorLink}
+        <div class="lyrics">${lyrics}</div>
+        ${song.Youtube ? `<iframe src="${song.Youtube.replace("watch?v=", "embed/")}" frameborder="0" allowfullscreen></iframe>` : ""}
+        <a class="next" href="song.html?id=${nextId}">→ Next Song</a>
+      `;
     }
 
     loadSong();
+
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js')
+        .then(reg => console.log("✅ Service Worker registered:", reg.scope))
+        .catch(err => console.error("❌ Service Worker error:", err));
+    }
   </script>
-
-<script>
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('sw.js')
-      .then(reg => console.log("✅ Service Worker registered:", reg.scope))
-      .catch(err => console.error("❌ Service Worker error:", err));
-  }
-</script>
-
 </body>
 </html>
