@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -22,7 +23,7 @@
   <div id="songs"></div>
 
   <script>
-    const csvUrl = "https://script.google.com/macros/s/AKfycbzjYbduGbrxWh91rmUsACN4kIH3g7ktowkZHkwNWvhaUjwxopU-ZLHLfKg1QDr_Xz4H/exec";
+    const jsonUrl = "https://script.google.com/macros/s/AKfycbzjYbduGbrxWh91rmUsACN4kIH3g7ktowkZHkwNWvhaUjwxopU-ZLHLfKg1QDr_Xz4H/exec";
     let allSongs = [], bookmarks = new Set();
 
     if (localStorage.getItem("bookmarks")) {
@@ -36,18 +37,10 @@
       renderSongs();
     }
 
-    function fetchCSV(url) {
+    function fetchJSON(url) {
       return fetch(url)
-        .then(res => res.text())
-        .then(text => {
-          const rows = text.split("\n").map(row => row.split(","));
-          const headers = rows[0];
-          return rows.slice(1).map(row => {
-            const obj = {};
-            headers.forEach((h, i) => obj[h.trim()] = row[i] ? row[i].trim() : "");
-            return obj;
-          });
-        });
+        .then(res => res.json())
+        .then(data => data.filter(row => row["No"]));
     }
 
     function renderSongs() {
@@ -55,7 +48,9 @@
       const category = document.getElementById("categoryFilter").value;
       const filtered = allSongs.filter(song => {
         const inCategory = !category || song["Category"] === category;
-        const searchMatch = Object.values(song).some(val => val.toLowerCase().includes(query));
+        const searchMatch = Object.values(song).some(val =>
+          String(val || "").toLowerCase().includes(query)
+        );
         return inCategory && searchMatch;
       });
       document.getElementById("songs").innerHTML = filtered.map(song => `
@@ -71,9 +66,9 @@
         </div>`).join("");
     }
 
-    fetchCSV(csvUrl).then(data => {
+    fetchJSON(jsonUrl).then(data => {
       allSongs = data;
-      const categories = [...new Set(allSongs.map(s => s["Category"]).filter(c => c))];
+      const categories = [...new Set(allSongs.map(s => s["Category"] || "").filter(c => c.trim() !== ""))];
       const filter = document.getElementById("categoryFilter");
       categories.forEach(c => {
         const opt = document.createElement("option");
