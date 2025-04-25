@@ -7,7 +7,24 @@
   <title>Hymnal</title>
   <link rel="manifest" href="manifest.json">
   <style>
-    body { font-family: sans-serif; padding: 1rem; background: #f4f4f4; }
+    :root {
+      --bg-color: #f4f4f4;
+      --text-color: #000;
+      --card-bg: #fff;
+      --button-bg: #eee;
+    }
+    body.dark {
+      --bg-color: #181818;
+      --text-color: #f4f4f4;
+      --card-bg: #242424;
+      --button-bg: #333;
+    }
+    body {
+      background: var(--bg-color);
+      color: var(--text-color);
+      font-family: sans-serif;
+      padding: 1rem;
+    }
     input, select, button {
       padding: 0.5rem;
       margin: 0.5rem 0.25rem;
@@ -16,10 +33,13 @@
       height: 42px;
       vertical-align: middle;
       box-sizing: border-box;
+      background: var(--button-bg);
+      color: var(--text-color);
+      border: 1px solid #888;
     }
     button { cursor: pointer; }
     .song-card {
-      background: white;
+      background: var(--card-bg);
       padding: 0.75rem 1rem;
       margin: 0.5rem 0;
       border-radius: 6px;
@@ -30,8 +50,8 @@
     }
     .song-info { flex-grow: 1; }
     .song-title { font-weight: bold; }
-    .song-title a { text-decoration: none; color: #000; }
-    .song-author { font-size: 0.9em; color: #555; }
+    .song-title a { text-decoration: none; color: var(--text-color); }
+    .song-author { font-size: 0.9em; color: #aaa; }
     .bookmark {
       margin-left: 10px;
       cursor: pointer;
@@ -42,8 +62,6 @@
     }
     #pagination { margin-top: 1rem; text-align: center; }
     #pagination button { margin: 0 5px; padding: 0.5rem 1rem; font-size: 1rem; }
-    #progressContainer { display: none; margin: 0.5rem 0; width: 100%; max-width: 400px; background: #ddd; border-radius: 6px; overflow: hidden; }
-    #progressBar { height: 20px; width: 0%; background: #4caf50; transition: width 0.4s ease; }
     h1 a { text-decoration: none; color: inherit; }
   </style>
 </head>
@@ -58,10 +76,8 @@
     <option value="man">Manglish</option>
   </select>
   <button id="showBookmarks">★ Bookmarked Songs</button>
-  <button id="showAll">All Songs</button>
-  <button onclick="downloadOffline()">⬇️ Download for Offline</button>
-
-  <div id="progressContainer"><div id="progressBar"></div></div>
+  <button id="showAll">⟳ All Songs</button>
+  <button id="toggleDark">🌓 Theme</button>
 
   <div id="songs">Loading...</div>
   <div id="pagination"></div>
@@ -73,7 +89,15 @@
     const songsPerPage = 20;
     let showOnlyBookmarks = false;
 
-    // Lyrics language setting
+    if (localStorage.getItem("theme") === "dark") {
+      document.body.classList.add("dark");
+    }
+
+    document.getElementById("toggleDark").addEventListener("click", () => {
+      document.body.classList.toggle("dark");
+      localStorage.setItem("theme", document.body.classList.contains("dark") ? "dark" : "light");
+    });
+
     document.getElementById("lyricsLang").value = localStorage.getItem("lyricsLang") || "mal";
     document.getElementById("lyricsLang").addEventListener("change", () => {
       localStorage.setItem("lyricsLang", document.getElementById("lyricsLang").value);
@@ -153,28 +177,9 @@
       document.getElementById("pagination").innerHTML = html;
     }
 
-    async function downloadOffline() {
-      const progressContainer = document.getElementById("progressContainer");
-      const progressBar = document.getElementById("progressBar");
-      progressContainer.style.display = "block";
-      progressBar.style.width = "5%";
-
-      try {
-        const data = await fetchJSON(jsonUrl);
-        if (Array.isArray(data)) {
-          localStorage.setItem("offlineSongs", JSON.stringify(data));
-          allSongs = data;
-          progressBar.style.width = "100%";
-          setTimeout(() => progressContainer.style.display = "none", 800);
-          renderSongs();
-        } else {
-          throw new Error("Invalid song data");
-        }
-      } catch (err) {
-        progressBar.style.background = "#f44336";
-        progressBar.style.width = "100%";
-        console.error("Download failed:", err);
-      }
+    function goToPage(page) {
+      currentPage = page;
+      renderSongs();
     }
 
     async function init() {
@@ -183,6 +188,7 @@
         allSongs = JSON.parse(localData);
       } else {
         allSongs = await fetchJSON(jsonUrl);
+        localStorage.setItem("offlineSongs", JSON.stringify(allSongs));
       }
       renderSongs();
 
@@ -204,22 +210,30 @@
         categoryFilter.appendChild(opt);
       });
 
-      const params = new URLSearchParams(window.location.search);
-      const authorQuery = params.get("author");
-      if (authorQuery) {
-        authorFilter.value = authorQuery;
-      }
-
       document.getElementById("search").addEventListener("input", () => { currentPage = 1; renderSongs(); });
       categoryFilter.addEventListener("change", () => { currentPage = 1; renderSongs(); });
       authorFilter.addEventListener("change", () => { currentPage = 1; renderSongs(); });
       document.getElementById("showBookmarks").addEventListener("click", () => {
         showOnlyBookmarks = true;
+        currentPage = 1; renderSongs();
+      });
+      
+      const params = new URLSearchParams(window.location.search);
+      const authorQuery = params.get("author");
+      if (authorQuery) {
+        document.getElementById("authorFilter").value = authorQuery;
+        document.getElementById("search").value = "";
+        document.getElementById("categoryFilter").value = "";
+        showOnlyBookmarks = false;
         currentPage = 1;
         renderSongs();
-      });
+      }
+
       document.getElementById("showAll").addEventListener("click", () => {
         showOnlyBookmarks = false;
+        document.getElementById("search").value = "";
+        document.getElementById("categoryFilter").value = "";
+        document.getElementById("authorFilter").value = "";
         currentPage = 1;
         renderSongs();
       });
