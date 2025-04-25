@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -48,6 +49,10 @@
   <p>If the app hasn't updated, you can manually refresh it below.</p>
   <button onclick="refreshCache()">🔁 Refresh App Cache</button>
 
+  <h2>📤 Share This App</h2>
+  <p>Invite others to use the app:</p>
+  <button onclick="shareApp()">📲 Share App</button>
+
   <script>
     function refreshCache() {
       if ('serviceWorker' in navigator) {
@@ -62,9 +67,23 @@
         alert("Service Worker not supported.");
       }
     }
+
+    function shareApp() {
+      const message = `Check out the Kristheeya Keerthanangal hymnal app:\n\nhttps://malhymnal.github.io/hymn/\n\nTo install this app, tap the browser menu (three dots) and choose "Add to Home Screen".`;
+      if (navigator.share) {
+        navigator.share({
+          title: 'Kristheeya Keerthanangal',
+          text: message,
+          url: 'https://malhymnal.github.io/hymn/'
+        }).catch(err => console.error('Sharing failed', err));
+      } else {
+        navigator.clipboard.writeText(message).then(() => {
+          alert("Link copied! You can now share it anywhere.");
+        });
+      }
+    }
   </script>
-</p>
-</p>
+<p>
   <a href="index.html" class="button">🏠 Back to Hymns</a>
 </body>
 </html>
