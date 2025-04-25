@@ -1,38 +1,28 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta id="theme-color" name="theme-color" content="#b30000">
   <title>Support - Kristheeya Keerthanangal</title>
-  
-  
+
   <style>
     :root {
       --bg-color: #f4f4f4;
-      --text-color: #333;
+      --text-color: #000;
       --border-color: #ccc;
       --btn-bg: #ddd;
       --btn-color: #000;
     }
-    @media (prefers-color-scheme: dark) {
-      :root {
-        --bg-color: #121212;
-        --text-color: #eee;
-        --border-color: #444;
-        --btn-bg: #444;
-      --btn-color: white;
-      --btn-color: #000;
-      }
-    }
+
     body.dark {
       --bg-color: #121212;
       --text-color: #eee;
       --border-color: #444;
-      --btn-bg: #444;
-      --btn-color: white;
+      --btn-bg: #ddd;
       --btn-color: #000;
     }
+
     body {
       font-family: sans-serif;
       background: var(--bg-color);
@@ -41,22 +31,24 @@
       max-width: 700px;
       margin: auto;
     }
+
     h2 {
       margin-top: 1.5rem;
       border-bottom: 1px solid var(--border-color);
       padding-bottom: 0.25rem;
     }
+
     p {
       line-height: 1.6;
     }
+
     a.button, button {
       display: inline-block;
       margin-top: 1rem;
       padding: 0.5rem 1rem;
       text-decoration: none;
       background: var(--btn-bg);
-  color: var(--btn-color);
-      color: white;
+      color: var(--btn-color);
       border-radius: 5px;
       border: none;
       cursor: pointer;
@@ -70,10 +62,17 @@
         document.body.classList.add("dark");
       });
     }
-  </script>
 
-    
-  </style>
+    function updateThemeColor() {
+      const metaThemeColor = document.querySelector("meta[name=theme-color]");
+      if (localStorage.getItem("theme") === "dark") {
+        metaThemeColor.setAttribute("content", "#000000");
+      } else {
+        metaThemeColor.setAttribute("content", "#b30000");
+      }
+    }
+    updateThemeColor();
+  </script>
 </head>
 <body>
   <h1>ⓘ Support</h1>
@@ -127,7 +126,7 @@
   </script>
 
   <p>
-  <a href="index.html" class="button">🏠 Back to Hymns</a>
-</p>
+    <a href="index.html" class="button">🏠 Back to Hymns</a>
+  </p>
 </body>
 </html>
