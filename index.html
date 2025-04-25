@@ -43,7 +43,7 @@
     #pagination { margin-top: 1rem; text-align: center; }
     #pagination button { margin: 0 5px; padding: 0.5rem 1rem; font-size: 1rem; }
     #progressContainer { display: none; margin: 0.5rem 0; width: 100%; max-width: 400px; background: #ddd; border-radius: 6px; overflow: hidden; }
-    #progressBar { height: 20px; width: 0%; background: #4caf50; }
+    #progressBar { height: 20px; width: 0%; background: #4caf50; transition: width 0.4s ease; }
     h1 a { text-decoration: none; color: inherit; }
   </style>
 </head>
@@ -95,13 +95,7 @@
     }
 
     function fetchJSON(url) {
-      return fetch(url)
-        .then(res => res.json())
-        .catch(err => {
-          document.getElementById("songs").innerHTML = `<p style="color: red;">Failed to load songs.</p>`;
-          console.error("Fetch error:", err);
-          return [];
-        });
+      return fetch(url).then(res => res.json());
     }
 
     function renderSongs() {
@@ -159,22 +153,27 @@
       document.getElementById("pagination").innerHTML = html;
     }
 
-    function goToPage(page) {
-      currentPage = page;
-      renderSongs();
-    }
-
     async function downloadOffline() {
-      document.getElementById("progressContainer").style.display = "block";
-      const data = await fetchJSON(jsonUrl);
-      if (Array.isArray(data)) {
-        allSongs = data;
-        localStorage.setItem("offlineSongs", JSON.stringify(data));
-        for (let i = 0; i <= 100; i += 5) {
-          await new Promise(r => setTimeout(r, 30));
-          document.getElementById("progressBar").style.width = i + "%";
+      const progressContainer = document.getElementById("progressContainer");
+      const progressBar = document.getElementById("progressBar");
+      progressContainer.style.display = "block";
+      progressBar.style.width = "5%";
+
+      try {
+        const data = await fetchJSON(jsonUrl);
+        if (Array.isArray(data)) {
+          localStorage.setItem("offlineSongs", JSON.stringify(data));
+          allSongs = data;
+          progressBar.style.width = "100%";
+          setTimeout(() => progressContainer.style.display = "none", 800);
+          renderSongs();
+        } else {
+          throw new Error("Invalid song data");
         }
-        renderSongs();
+      } catch (err) {
+        progressBar.style.background = "#f44336";
+        progressBar.style.width = "100%";
+        console.error("Download failed:", err);
       }
     }
 
@@ -182,11 +181,10 @@
       const localData = localStorage.getItem("offlineSongs");
       if (localData) {
         allSongs = JSON.parse(localData);
-        renderSongs();
       } else {
         allSongs = await fetchJSON(jsonUrl);
-        renderSongs();
       }
+      renderSongs();
 
       const authors = [...new Set(allSongs.map(s => s["Author English"] || "").filter(c => c.trim() !== ""))];
       const authorFilter = document.getElementById("authorFilter");
@@ -215,13 +213,11 @@
       document.getElementById("search").addEventListener("input", () => { currentPage = 1; renderSongs(); });
       categoryFilter.addEventListener("change", () => { currentPage = 1; renderSongs(); });
       authorFilter.addEventListener("change", () => { currentPage = 1; renderSongs(); });
-
       document.getElementById("showBookmarks").addEventListener("click", () => {
         showOnlyBookmarks = true;
         currentPage = 1;
         renderSongs();
       });
-
       document.getElementById("showAll").addEventListener("click", () => {
         showOnlyBookmarks = false;
         currentPage = 1;
