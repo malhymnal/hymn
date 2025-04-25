@@ -1,0 +1,13 @@
+{
+  "name": "Hymnal",
+  "short_name": "Hymnal",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "description": "Search and view hymns with YouTube and audio.",
+  "icons": [{
+    "src": "icon.png",
+    "type": "image/png",
+    "sizes": "512x512"
+  }]
+}

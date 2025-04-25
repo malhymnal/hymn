@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hymnal PWA</title>
+  <link rel="manifest" href="manifest.json">
+  <style>
+    body { font-family: sans-serif; padding: 1rem; background: #f4f4f4; }
+    input, select { padding: 0.5rem; margin: 0.5rem 0; width: 100%; max-width: 400px; }
+    .song-card { background: white; padding: 1rem; margin: 1rem 0; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+    .bookmark { float: right; cursor: pointer; }
+    iframe, audio { width: 100%; margin-top: 0.5rem; }
+  </style>
+</head>
+<body>
+  <h1>Hymnal</h1>
+  <input type="text" id="search" placeholder="Search by number, author, lyrics...">
+  <select id="categoryFilter">
+    <option value="">All Categories</option>
+  </select>
+  <div id="songs"></div>
+
+  <script>
+    const csvUrl = "https://script.google.com/macros/s/AKfycbzjYbduGbrxWh91rmUsACN4kIH3g7ktowkZHkwNWvhaUjwxopU-ZLHLfKg1QDr_Xz4H/exec";
+    let allSongs = [], bookmarks = new Set();
+
+    if (localStorage.getItem("bookmarks")) {
+      bookmarks = new Set(JSON.parse(localStorage.getItem("bookmarks")));
+    }
+
+    function toggleBookmark(no) {
+      if (bookmarks.has(no)) bookmarks.delete(no);
+      else bookmarks.add(no);
+      localStorage.setItem("bookmarks", JSON.stringify([...bookmarks]));
+      renderSongs();
+    }
+
+    function fetchCSV(url) {
+      return fetch(url)
+        .then(res => res.text())
+        .then(text => {
+          const rows = text.split("\n").map(row => row.split(","));
+          const headers = rows[0];
+          return rows.slice(1).map(row => {
+            const obj = {};
+            headers.forEach((h, i) => obj[h.trim()] = row[i] ? row[i].trim() : "");
+            return obj;
+          });
+        });
+    }
+
+    function renderSongs() {
+      const query = document.getElementById("search").value.toLowerCase();
+      const category = document.getElementById("categoryFilter").value;
+      const filtered = allSongs.filter(song => {
+        const inCategory = !category || song["Category"] === category;
+        const searchMatch = Object.values(song).some(val => val.toLowerCase().includes(query));
+        return inCategory && searchMatch;
+      });
+      document.getElementById("songs").innerHTML = filtered.map(song => `
+        <div class="song-card">
+          <strong>${song.No}. ${song.Name}</strong>
+          <span class="bookmark" onclick="toggleBookmark('${song.No}')">
+            ${bookmarks.has(song.No) ? '★' : '☆'}
+          </span>
+          <p><em>${song.Author}</em> (${song["Author English"]})</p>
+          <p>${song.Manglish}</p>
+          ${song.Youtube ? `<iframe src="${song.Youtube.replace("watch?v=", "embed/")}" frameborder="0" allowfullscreen></iframe>` : ""}
+          ${song["Listen Audio"] ? `<audio controls src="${song["Listen Audio"]}"></audio>` : ""}
+        </div>`).join("");
+    }
+
+    fetchCSV(csvUrl).then(data => {
+      allSongs = data;
+      const categories = [...new Set(allSongs.map(s => s["Category"]).filter(c => c))];
+      const filter = document.getElementById("categoryFilter");
+      categories.forEach(c => {
+        const opt = document.createElement("option");
+        opt.value = c; opt.textContent = c;
+        filter.appendChild(opt);
+      });
+      document.getElementById("search").addEventListener("input", renderSongs);
+      document.getElementById("categoryFilter").addEventListener("change", renderSongs);
+      renderSongs();
+    });
+  </script>
+</body>
+</html>
