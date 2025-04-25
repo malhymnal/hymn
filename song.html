@@ -1,0 +1,62 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Song Details</title>
+  <style>
+    body { font-family: sans-serif; padding: 1rem; background: #f4f4f4; }
+    .container { background: white; padding: 1rem; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); max-width: 700px; margin: auto; }
+    h2 { margin-bottom: 0.2em; }
+    .author { color: #666; margin-bottom: 1.5em; display: block; }
+    .lyrics { white-space: pre-wrap; font-family: inherit; margin-bottom: 1em; font-size: 1.05em; line-height: 1.6; }
+    iframe { width: 100%; height: 350px; margin-top: 1rem; }
+    a.back, a.next { display: inline-block; margin: 1rem 0; text-decoration: none; color: #333; background: #eee; padding: 0.5rem 1rem; border-radius: 6px; }
+    .bookmark { font-size: 1.5em; cursor: pointer; float: right; margin-top: -1.5em; }
+  </style>
+</head>
+<body>
+  <a href="index.html" class="back">← Back</a>
+  <div class="container" id="songDetails">Loading...</div>
+
+  <script>
+    const baseUrl = "https://script.google.com/macros/s/AKfycbzjYbduGbrxWh91rmUsACN4kIH3g7ktowkZHkwNWvhaUjwxopU-ZLHLfKg1QDr_Xz4H/exec";
+    const urlParams = new URLSearchParams(window.location.search);
+    const songId = urlParams.get("id");
+    let lyricsLang = localStorage.getItem("lyricsLang") || "mal";
+
+    function loadSong() {
+      fetch(`${baseUrl}?id=${songId}`)
+        .then(res => res.json())
+        .then(song => {
+          if (!song || !song.No) {
+            document.getElementById("songDetails").innerHTML = "<p style='color:red;'>Song not found.</p>";
+            return;
+          }
+
+          const lyrics = lyricsLang === "man" ? song.Manglish || "" : song.Song || "";
+          const nextId = parseInt(song.No) + 1;
+
+          const authorLink = song["Author English"]
+            ? `<a class="author" href="index.html?author=${encodeURIComponent(song["Author English"])}">${song["Author English"]}</a>`
+            : `<div class="author" style="height: 1.5em;">&nbsp;</div>`;
+
+          document.getElementById("songDetails").innerHTML = `
+            <h2>${song.No}. ${song.Name || ""}</h2>
+            ${authorLink}
+            <div class="lyrics">${lyrics}</div>
+            ${song.Youtube ? `<iframe src="${song.Youtube.replace("watch?v=", "embed/")}" frameborder="0" allowfullscreen></iframe>` : ""}
+            <a class="next" href="song.html?id=${nextId}">→ Next Song</a>
+          `;
+        })
+        .catch(err => {
+          document.getElementById("songDetails").innerHTML = "<p style='color:red;'>Failed to load song.</p>";
+          console.error(err);
+        });
+    }
+
+    loadSong();
+  </script>
+</body>
+</html>

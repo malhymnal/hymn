@@ -4,35 +4,86 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Hymnal PWA</title>
+  <title>Hymnal</title>
   <link rel="manifest" href="manifest.json">
   <style>
     body { font-family: sans-serif; padding: 1rem; background: #f4f4f4; }
-    input, select { padding: 0.5rem; margin: 0.5rem 0; width: 100%; max-width: 400px; }
-    .song-card { background: white; padding: 1rem; margin: 1rem 0; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-    .bookmark { float: right; cursor: pointer; }
-    iframe, audio { width: 100%; margin-top: 0.5rem; }
+    input, select, button {
+      padding: 0.5rem;
+      margin: 0.5rem 0.25rem;
+      font-size: 1rem;
+      line-height: 1.25;
+      height: 42px;
+      vertical-align: middle;
+      box-sizing: border-box;
+    }
+    button { cursor: pointer; }
+    .song-card {
+      background: white;
+      padding: 0.75rem 1rem;
+      margin: 0.5rem 0;
+      border-radius: 6px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .song-info { flex-grow: 1; }
+    .song-title { font-weight: bold; }
+    .song-title a { text-decoration: none; color: #000; }
+    .song-author { font-size: 0.9em; color: #555; }
+    .bookmark {
+      margin-left: 10px;
+      cursor: pointer;
+      font-size: 1.2rem;
+      line-height: 1;
+      display: flex;
+      align-items: center;
+    }
+    #pagination { margin-top: 1rem; text-align: center; }
+    #pagination button { margin: 0 5px; padding: 0.5rem 1rem; font-size: 1rem; }
+    h1 a { text-decoration: none; color: inherit; }
   </style>
 </head>
 <body>
-  <h1>Hymnal</h1>
-  <input type="text" id="search" placeholder="Search by number, author, lyrics...">
-  <select id="categoryFilter">
-    <option value="">All Categories</option>
+  <h1><a href="index.html">Hymnal</a></h1>
+
+  <input type="text" id="search" placeholder="Search by number, author, title...">
+  <select id="categoryFilter"><option value="">All Categories</option></select>
+  <select id="authorFilter"><option value="">All Authors</option></select>
+  <select id="lyricsLang">
+    <option value="mal">Malayalam</option>
+    <option value="man">Manglish</option>
   </select>
-  <div id="songs"></div>
+  <button id="showBookmarks">★ Bookmarked Songs</button>
+  <button id="showAll">All Songs</button>
+
+  <div id="songs">Loading...</div>
+  <div id="pagination"></div>
 
   <script>
+    document.getElementById("lyricsLang").value = localStorage.getItem("lyricsLang") || "mal";
+    document.getElementById("lyricsLang").addEventListener("change", () => {
+      localStorage.setItem("lyricsLang", document.getElementById("lyricsLang").value);
+    });
+
     const jsonUrl = "https://script.google.com/macros/s/AKfycbzjYbduGbrxWh91rmUsACN4kIH3g7ktowkZHkwNWvhaUjwxopU-ZLHLfKg1QDr_Xz4H/exec";
-    let allSongs = [], bookmarks = new Set();
+    let allSongs = [], filteredSongs = [], bookmarks = new Set();
+    let currentPage = 1;
+    const songsPerPage = 20;
+    let showOnlyBookmarks = false;
 
     if (localStorage.getItem("bookmarks")) {
       bookmarks = new Set(JSON.parse(localStorage.getItem("bookmarks")));
     }
 
     function toggleBookmark(no) {
-      if (bookmarks.has(no)) bookmarks.delete(no);
-      else bookmarks.add(no);
+      const key = String(no);
+      if (bookmarks.has(key)) {
+        bookmarks.delete(key);
+      } else {
+        bookmarks.add(key);
+      }
       localStorage.setItem("bookmarks", JSON.stringify([...bookmarks]));
       renderSongs();
     }
@@ -40,43 +91,116 @@
     function fetchJSON(url) {
       return fetch(url)
         .then(res => res.json())
-        .then(data => data.filter(row => row["No"]));
+        .catch(err => {
+          document.getElementById("songs").innerHTML = `<p style="color: red;">Failed to load songs.</p>`;
+          console.error("Fetch error:", err);
+          return [];
+        });
     }
 
     function renderSongs() {
       const query = document.getElementById("search").value.toLowerCase();
       const category = document.getElementById("categoryFilter").value;
-      const filtered = allSongs.filter(song => {
-        const inCategory = !category || song["Category"] === category;
+      const author = document.getElementById("authorFilter").value;
+
+      filteredSongs = allSongs.filter(song => {
+        const inCategory = !category || String(song["Category"] || "") === category;
+        const inAuthor = !author || String(song["Author English"] || "") === author;
         const searchMatch = Object.values(song).some(val =>
           String(val || "").toLowerCase().includes(query)
         );
-        return inCategory && searchMatch;
+        const isBookmarked = !showOnlyBookmarks || bookmarks.has(String(song.No));
+        return inCategory && inAuthor && searchMatch && isBookmarked;
       });
-      document.getElementById("songs").innerHTML = filtered.map(song => `
+
+      const start = (currentPage - 1) * songsPerPage;
+      const end = start + songsPerPage;
+      const pageSongs = filteredSongs.slice(start, end);
+
+      if (pageSongs.length === 0) {
+        document.getElementById("songs").innerHTML = "<p>No songs match your search/filter.</p>";
+        document.getElementById("pagination").innerHTML = "";
+        return;
+      }
+
+      document.getElementById("songs").innerHTML = pageSongs.map(song => `
         <div class="song-card">
-          <strong>${song.No}. ${song.Name}</strong>
+          <div class="song-info">
+            <div class="song-title"><a href="song.html?id=${song.No}">${song.No || "-"}. ${song.Name || "Untitled"}</a></div>
+            ${song["Author English"] ? `<div class="song-author">${song["Author English"]}</div>` : ""}
+          </div>
           <span class="bookmark" onclick="toggleBookmark('${song.No}')">
-            ${bookmarks.has(song.No) ? '★' : '☆'}
+            ${bookmarks.has(String(song.No)) ? '★' : '☆'}
           </span>
-          <p><em>${song.Author}</em> (${song["Author English"]})</p>
-          <p>${song.Manglish}</p>
-          ${song.Youtube ? `<iframe src="${song.Youtube.replace("watch?v=", "embed/")}" frameborder="0" allowfullscreen></iframe>` : ""}
-          ${song["Listen Audio"] ? `<audio controls src="${song["Listen Audio"]}"></audio>` : ""}
-        </div>`).join("");
+        </div>
+      `).join("");
+
+      renderPagination();
+    }
+
+    function renderPagination() {
+      const totalPages = Math.ceil(filteredSongs.length / songsPerPage);
+      let html = "";
+
+      if (currentPage > 1) {
+        html += `<button onclick="goToPage(${currentPage - 1})">← Prev</button>`;
+      }
+      html += ` Page ${currentPage} of ${totalPages} `;
+      if (currentPage < totalPages) {
+        html += `<button onclick="goToPage(${currentPage + 1})">Next →</button>`;
+      }
+
+      document.getElementById("pagination").innerHTML = html;
+    }
+
+    function goToPage(page) {
+      currentPage = page;
+      renderSongs();
     }
 
     fetchJSON(jsonUrl).then(data => {
-      allSongs = data;
+      allSongs = data || [];
+
+      const authors = [...new Set(allSongs.map(s => s["Author English"] || "").filter(c => c.trim() !== ""))];
+      const authorFilter = document.getElementById("authorFilter");
+      authors.forEach(c => {
+        const opt = document.createElement("option");
+        opt.value = c;
+        opt.textContent = c;
+        authorFilter.appendChild(opt);
+      });
+
       const categories = [...new Set(allSongs.map(s => s["Category"] || "").filter(c => c.trim() !== ""))];
-      const filter = document.getElementById("categoryFilter");
+      const categoryFilter = document.getElementById("categoryFilter");
       categories.forEach(c => {
         const opt = document.createElement("option");
-        opt.value = c; opt.textContent = c;
-        filter.appendChild(opt);
+        opt.value = c;
+        opt.textContent = c;
+        categoryFilter.appendChild(opt);
       });
-      document.getElementById("search").addEventListener("input", renderSongs);
-      document.getElementById("categoryFilter").addEventListener("change", renderSongs);
+
+      const params = new URLSearchParams(window.location.search);
+      const authorQuery = params.get("author");
+      if (authorQuery) {
+        authorFilter.value = authorQuery;
+      }
+
+      document.getElementById("search").addEventListener("input", () => { currentPage = 1; renderSongs(); });
+      categoryFilter.addEventListener("change", () => { currentPage = 1; renderSongs(); });
+      authorFilter.addEventListener("change", () => { currentPage = 1; renderSongs(); });
+
+      document.getElementById("showBookmarks").addEventListener("click", () => {
+        showOnlyBookmarks = true;
+        currentPage = 1;
+        renderSongs();
+      });
+
+      document.getElementById("showAll").addEventListener("click", () => {
+        showOnlyBookmarks = false;
+        currentPage = 1;
+        renderSongs();
+      });
+
       renderSongs();
     });
   </script>
