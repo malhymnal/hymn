@@ -91,7 +91,7 @@
       document.getElementById("songDetails").innerHTML = `
         <h2>${song.No}. ${song.Name || ""}</h2>
         ${authorLink}
-        <div class="lyrics">${lyrics}</div>
+        <div class="lyrics" id="lyricsText">${lyrics}</div>
         ${song.Youtube ? `<iframe src="${song.Youtube.replace("watch?v=", "embed/")}" frameborder="0" allowfullscreen></iframe>` : ""}
         <a class="next" href="song.html?id=${nextId}">→ Next Song</a>
       `;
