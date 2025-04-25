@@ -42,6 +42,8 @@
     }
     #pagination { margin-top: 1rem; text-align: center; }
     #pagination button { margin: 0 5px; padding: 0.5rem 1rem; font-size: 1rem; }
+    #progressContainer { display: none; margin: 0.5rem 0; width: 100%; max-width: 400px; background: #ddd; border-radius: 6px; overflow: hidden; }
+    #progressBar { height: 20px; width: 0%; background: #4caf50; }
     h1 a { text-decoration: none; color: inherit; }
   </style>
 </head>
@@ -57,21 +59,25 @@
   </select>
   <button id="showBookmarks">★ Bookmarked Songs</button>
   <button id="showAll">All Songs</button>
+  <button onclick="downloadOffline()">⬇️ Download for Offline</button>
+
+  <div id="progressContainer"><div id="progressBar"></div></div>
 
   <div id="songs">Loading...</div>
   <div id="pagination"></div>
 
   <script>
-    document.getElementById("lyricsLang").value = localStorage.getItem("lyricsLang") || "mal";
-    document.getElementById("lyricsLang").addEventListener("change", () => {
-      localStorage.setItem("lyricsLang", document.getElementById("lyricsLang").value);
-    });
-
     const jsonUrl = "https://script.google.com/macros/s/AKfycbzjYbduGbrxWh91rmUsACN4kIH3g7ktowkZHkwNWvhaUjwxopU-ZLHLfKg1QDr_Xz4H/exec";
     let allSongs = [], filteredSongs = [], bookmarks = new Set();
     let currentPage = 1;
     const songsPerPage = 20;
     let showOnlyBookmarks = false;
+
+    // Lyrics language setting
+    document.getElementById("lyricsLang").value = localStorage.getItem("lyricsLang") || "mal";
+    document.getElementById("lyricsLang").addEventListener("change", () => {
+      localStorage.setItem("lyricsLang", document.getElementById("lyricsLang").value);
+    });
 
     if (localStorage.getItem("bookmarks")) {
       bookmarks = new Set(JSON.parse(localStorage.getItem("bookmarks")));
@@ -158,8 +164,29 @@
       renderSongs();
     }
 
-    fetchJSON(jsonUrl).then(data => {
-      allSongs = data || [];
+    async function downloadOffline() {
+      document.getElementById("progressContainer").style.display = "block";
+      const data = await fetchJSON(jsonUrl);
+      if (Array.isArray(data)) {
+        allSongs = data;
+        localStorage.setItem("offlineSongs", JSON.stringify(data));
+        for (let i = 0; i <= 100; i += 5) {
+          await new Promise(r => setTimeout(r, 30));
+          document.getElementById("progressBar").style.width = i + "%";
+        }
+        renderSongs();
+      }
+    }
+
+    async function init() {
+      const localData = localStorage.getItem("offlineSongs");
+      if (localData) {
+        allSongs = JSON.parse(localData);
+        renderSongs();
+      } else {
+        allSongs = await fetchJSON(jsonUrl);
+        renderSongs();
+      }
 
       const authors = [...new Set(allSongs.map(s => s["Author English"] || "").filter(c => c.trim() !== ""))];
       const authorFilter = document.getElementById("authorFilter");
@@ -200,18 +227,15 @@
         currentPage = 1;
         renderSongs();
       });
+    }
 
-      renderSongs();
-    });
+    init();
+
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js')
+        .then(reg => console.log("✅ Service Worker registered:", reg.scope))
+        .catch(err => console.error("❌ Service Worker error:", err));
+    }
   </script>
-
-<script>
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('sw.js')
-      .then(reg => console.log("✅ Service Worker registered:", reg.scope))
-      .catch(err => console.error("❌ Service Worker error:", err));
-  }
-</script>
-
 </body>
 </html>
