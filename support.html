@@ -6,23 +6,27 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Support - Kristheeya Keerthanangal</title>
   
+  
   <style>
     :root {
       --bg-color: #f4f4f4;
       --text-color: #333;
       --border-color: #ccc;
+      --btn-bg: #555;
     }
     @media (prefers-color-scheme: dark) {
       :root {
         --bg-color: #121212;
         --text-color: #eee;
         --border-color: #444;
+        --btn-bg: #000;
       }
     }
     body.dark {
       --bg-color: #121212;
       --text-color: #eee;
       --border-color: #444;
+      --btn-bg: #000;
     }
     body {
       font-family: sans-serif;
@@ -37,16 +41,22 @@
       border-bottom: 1px solid var(--border-color);
       padding-bottom: 0.25rem;
     }
-    a.button {
+    p {
+      line-height: 1.6;
+    }
+    a.button, button {
       display: inline-block;
       margin-top: 1rem;
       padding: 0.5rem 1rem;
       text-decoration: none;
-      background: #555;
+      background: var(--btn-bg);
       color: white;
       border-radius: 5px;
+      border: none;
+      cursor: pointer;
     }
   </style>
+
   <script>
     if (localStorage.getItem("theme") === "dark") {
       document.documentElement.classList.add("dark");
@@ -56,31 +66,7 @@
     }
   </script>
 
-    body {
-      font-family: sans-serif;
-      background: #f4f4f4;
-      color: #333;
-      padding: 1rem;
-      max-width: 700px;
-      margin: auto;
-    }
-    h2 {
-      margin-top: 1.5rem;
-      border-bottom: 1px solid #ccc;
-      padding-bottom: 0.25rem;
-    }
-    p {
-      line-height: 1.6;
-    }
-    a.button {
-      display: inline-block;
-      margin-top: 1rem;
-      padding: 0.5rem 1rem;
-      text-decoration: none;
-      background: #555;
-      color: white;
-      border-radius: 5px;
-    }
+    
   </style>
 </head>
 <body>
@@ -133,7 +119,9 @@
       }
     }
   </script>
-<p>
+
+  <p>
   <a href="index.html" class="button">🏠 Back to Hymns</a>
+</p>
 </body>
 </html>
