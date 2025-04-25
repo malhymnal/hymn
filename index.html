@@ -1,9 +1,9 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta id="theme-color" name="theme-color" content="#b30000">
   <title>Kristheeya Keerthanangal</title>
   <link rel="manifest" href="manifest.json">
   <style>
@@ -64,14 +64,25 @@
     #pagination button { margin: 0 5px; padding: 0.5rem 1rem; font-size: 1rem; }
     h1 a { text-decoration: none; color: inherit; }
   </style>
+  <script>
+    function updateThemeColor() {
+      const metaThemeColor = document.querySelector("meta[name=theme-color]");
+      if (localStorage.getItem("theme") === "dark") {
+        metaThemeColor.setAttribute("content", "#000000");
+      } else {
+        metaThemeColor.setAttribute("content", "#b30000");
+      }
+    }
+    updateThemeColor();
+  </script>
 </head>
 <body>
-  <h1 style="margin-top: 0;"><a href="index.html">Kristheeya Keerthanangal</a> </h1>
+  <h1 style="margin-top: 0;"><a href="index.html">Kristheeya Keerthanangal</a></h1>
 
-  
-  <div style="position: sticky; top: 0; background: var(--bg-color); z-index: 100; padding-bottom: 0.5rem;"><input type="text" id="search" style="width: 300px;" placeholder="Search by number, author, title...">
-  <select id="categoryFilter"><option value="">All Categories</option></select>
-  <select id="authorFilter"><option value="">All Authors</option></select>
+  <div style="position: sticky; top: 0; background: var(--bg-color); z-index: 100; padding-bottom: 0.5rem;">
+    <input type="text" id="search" style="width: 300px;" placeholder="Search by number, author, title...">
+    <select id="categoryFilter"><option value="">All Categories</option></select>
+    <select id="authorFilter"><option value="">All Authors</option></select>
   </div>
   <select id="lyricsLang">
     <option value="mal">Malayalam</option>
@@ -99,6 +110,7 @@
     document.getElementById("toggleDark").addEventListener("click", () => {
       document.body.classList.toggle("dark");
       localStorage.setItem("theme", document.body.classList.contains("dark") ? "dark" : "light");
+      updateThemeColor();
     });
 
     document.getElementById("lyricsLang").value = localStorage.getItem("lyricsLang") || "mal";
@@ -170,11 +182,11 @@
       let html = "";
 
       if (currentPage > 1) {
-        html += `<button onclick="goToPage(${currentPage - 1})">← Prev</button>`;
+        html += `<button onclick="goToPage(${currentPage - 1})">\u2190 Prev</button>`;
       }
       html += ` Page ${currentPage} of ${totalPages} `;
       if (currentPage < totalPages) {
-        html += `<button onclick="goToPage(${currentPage + 1})">Next →</button>`;
+        html += `<button onclick="goToPage(${currentPage + 1})">Next \u2192</button>`;
       }
 
       document.getElementById("pagination").innerHTML = html;
@@ -220,7 +232,7 @@
         showOnlyBookmarks = true;
         currentPage = 1; renderSongs();
       });
-      
+
       const params = new URLSearchParams(window.location.search);
       const authorQuery = params.get("author");
       if (authorQuery) {
@@ -246,8 +258,8 @@
 
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('sw.js')
-        .then(reg => console.log("✅ Service Worker registered:", reg.scope))
-        .catch(err => console.error("❌ Service Worker error:", err));
+        .then(reg => console.log("\u2705 Service Worker registered:", reg.scope))
+        .catch(err => console.error("\u274C Service Worker error:", err));
     }
   </script>
 </body>
