@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -34,17 +33,38 @@
   </style>
 </head>
 <body>
-  <h1 style="display:inline-block; margin-left:10px;">ⓘ Support</h1>
+  <h1>ⓘ Support</h1>
 
   <h2>📱 How to Install</h2>
-  <p>To install this app, tap the browser menu (three dots) or share button and choose <strong>"Add to Home Screen"</strong>.</p>
+  <p>To install this app, tap the browser menu (three dots) and choose <strong>"Add to Home Screen"</strong>.</p>
 
   <h2>🙏 Salvation Prayer</h2>
   <p>Lord Jesus, I believe You are the Son of God. I confess that I am a sinner, and I ask You to forgive me. Come into my heart and be my Lord and Savior. Thank You for saving me. Amen.</p>
 
   <h2>📝 Feedback</h2>
-  <p>Made for the church by Sujith John Paul, Mulakuzha St Thomas Marthoma Church. If you'd like to share feedback, suggestions, or report issues, please <a href="mailto:supportmalhymnal@icloud.com">email to supportmalhymnal@icloud.com.</a>.</p>
+  <p>If you'd like to share feedback, please <a href="mailto:supportmalhymnal@icloud.com">email us</a>.</p>
 
+  <h2>🔄 Refresh App</h2>
+  <p>If the app hasn't updated, you can manually refresh it below.</p>
+  <button onclick="refreshCache()">🔁 Refresh App Cache</button>
+
+  <script>
+    function refreshCache() {
+      if ('serviceWorker' in navigator) {
+        caches.keys().then(function(names) {
+          for (let name of names)
+            caches.delete(name);
+        }).then(() => {
+          alert('Cache cleared! Reloading latest version...');
+          location.reload(true);
+        });
+      } else {
+        alert("Service Worker not supported.");
+      }
+    }
+  </script>
+</p>
+</p>
   <a href="index.html" class="button">🏠 Back to Hymns</a>
 </body>
 </html>
